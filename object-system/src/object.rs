@@ -9,14 +9,14 @@ pub struct Object {
 }
 
 impl Object {
-    pub fn new(id: ObjectId) -> Self {
+    pub(crate) fn new(id: ObjectId) -> Self {
         Self {
             id,
             components: vec![],
         }
     }
 
-    pub fn with_components(id: ObjectId, components: Vec<AnyComponent>) -> Self {
+    pub(crate) fn with_components(id: ObjectId, components: Vec<AnyComponent>) -> Self {
         Self { id, components }
     }
 
@@ -28,15 +28,24 @@ impl Object {
         &self.components
     }
 
-    pub fn find_component_by_id(&self, component_id: ComponentId) -> Option<&AnyComponent> {
-        self.components.iter().find(|c| c.id() == component_id)
+    pub fn find_component_by_id<T>(&self, component_id: ComponentId) -> Option<&T>
+    where
+        T: Component,
+    {
+        self.components
+            .iter()
+            .find(|c| c.id() == component_id)
+            .and_then(|c| c.downcast_ref::<T>())
     }
 
-    pub fn find_component_by_id_mut(
-        &mut self,
-        component_id: ComponentId,
-    ) -> Option<&mut AnyComponent> {
-        self.components.iter_mut().find(|c| c.id() == component_id)
+    pub fn find_component_by_id_mut<T>(&mut self, component_id: ComponentId) -> Option<&mut T>
+    where
+        T: Component,
+    {
+        self.components
+            .iter_mut()
+            .find(|c| c.id() == component_id)
+            .and_then(|c| c.downcast_mut::<T>())
     }
 
     pub fn find_component_by_type<T>(&self) -> Option<&T>
@@ -71,11 +80,11 @@ impl Object {
             .filter_map(|c| c.downcast_mut::<T>())
     }
 
-    pub fn add_component(&mut self, component: AnyComponent) {
+    pub(crate) fn add_component(&mut self, component: AnyComponent) {
         self.components.push(component);
     }
 
-    pub fn remove_component(&mut self, component_id: ComponentId) {
+    pub(crate) fn remove_component(&mut self, component_id: ComponentId) {
         if let Some(index) = self.components.iter().position(|c| c.id() == component_id) {
             self.components.swap_remove(index);
         }

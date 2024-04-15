@@ -18,6 +18,7 @@ impl ObjectStorage {
 
     pub fn remove(&mut self, id: ObjectId) {
         self.objects.remove(&id);
+        // TODO: de-allocate the object id
     }
 
     pub fn get(&self, id: ObjectId) -> Option<&Object> {
