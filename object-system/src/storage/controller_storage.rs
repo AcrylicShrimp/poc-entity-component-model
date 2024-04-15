@@ -16,6 +16,10 @@ impl ControllerStorage {
         }
     }
 
+    pub(crate) fn find_controller(&mut self, id: ObjectId) -> Option<&mut dyn Controller> {
+        self.controllers.get_mut(&id).map(|c| c.as_mut())
+    }
+
     pub(crate) fn attach_controller(
         &mut self,
         id: ObjectId,

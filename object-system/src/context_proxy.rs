@@ -1,5 +1,5 @@
 use crate::{AnyComponent, Component, ComponentId, Controller, Object, ObjectId, ObjectStorage};
-use std::num::NonZeroU32;
+use std::{any::Any, num::NonZeroU32};
 
 pub(crate) enum ContextActionItem {
     RemoveObject {
@@ -23,6 +23,18 @@ pub(crate) enum ContextActionItem {
     },
     UnlistenOnLateUpdate {
         object_id: ObjectId,
+    },
+    ListenEvent {
+        event: String,
+        object_id: ObjectId,
+    },
+    UnlistenEvent {
+        event: String,
+        object_id: ObjectId,
+    },
+    EmitEvent {
+        event: String,
+        param: Box<dyn Any>,
     },
 }
 
@@ -149,5 +161,26 @@ impl<'ctx> ContextProxy<'ctx> {
     pub fn unlisten_on_late_update(&mut self, object_id: ObjectId) {
         self.action_queue
             .push(ContextActionItem::UnlistenOnLateUpdate { object_id });
+    }
+
+    pub fn listen_event(&mut self, event: impl Into<String>, object_id: ObjectId) {
+        self.action_queue.push(ContextActionItem::ListenEvent {
+            event: event.into(),
+            object_id,
+        });
+    }
+
+    pub fn unlisten_event(&mut self, event: impl Into<String>, object_id: ObjectId) {
+        self.action_queue.push(ContextActionItem::UnlistenEvent {
+            event: event.into(),
+            object_id,
+        });
+    }
+
+    pub fn emit_event(&mut self, event: impl Into<String>, param: impl Any) {
+        self.action_queue.push(ContextActionItem::EmitEvent {
+            event: event.into(),
+            param: Box::new(param),
+        });
     }
 }
