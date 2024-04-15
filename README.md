@@ -1,4 +1,4 @@
-# poc-entity-component-model
+# poc-object-component-model
 
 This repository showcases an implementation of an object (entity) management system in Rust. This system draws inspiration from the Entity-Component-System (ECS) model but is simplified for ease of understanding and use.
 
