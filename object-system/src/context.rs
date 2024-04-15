@@ -70,6 +70,7 @@ impl Context {
             for action in result.action_queue {
                 match action {
                     ContextActionItem::RemoveObject { object_id } => {
+                        self.event_receiver_storage.unlisten_all(object_id);
                         self.controller_storage
                             .detach_controller(object_id, &mut ctx);
                         removed_objects.push(object_id);
@@ -82,6 +83,7 @@ impl Context {
                             .attach_controller(object_id, controller, &mut ctx);
                     }
                     ContextActionItem::DetachController { object_id } => {
+                        self.event_receiver_storage.unlisten_all(object_id);
                         self.controller_storage
                             .detach_controller(object_id, &mut ctx);
                     }
@@ -102,6 +104,9 @@ impl Context {
                     }
                     ContextActionItem::UnlistenEvent { event, object_id } => {
                         self.event_receiver_storage.unlisten(event, object_id);
+                    }
+                    ContextActionItem::UnlistenEventAll { object_id } => {
+                        self.event_receiver_storage.unlisten_all(object_id);
                     }
                     ContextActionItem::EmitEvent { event, param } => {
                         self.event_receiver_storage.emit(

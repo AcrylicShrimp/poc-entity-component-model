@@ -32,6 +32,9 @@ pub(crate) enum ContextActionItem {
         event: String,
         object_id: ObjectId,
     },
+    UnlistenEventAll {
+        object_id: ObjectId,
+    },
     EmitEvent {
         event: String,
         param: Box<dyn Any>,
@@ -175,6 +178,11 @@ impl<'ctx> ContextProxy<'ctx> {
             event: event.into(),
             object_id,
         });
+    }
+
+    pub fn unlisten_event_all(&mut self, object_id: ObjectId) {
+        self.action_queue
+            .push(ContextActionItem::UnlistenEventAll { object_id });
     }
 
     pub fn emit_event(&mut self, event: impl Into<String>, param: impl Any) {
