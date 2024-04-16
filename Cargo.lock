@@ -12,3 +12,7 @@ version = "0.1.0"
 dependencies = [
  "object-system",
 ]
+
+[[package]]
+name = "slotmap"
+version = "0.1.0"
