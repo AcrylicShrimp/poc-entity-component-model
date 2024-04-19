@@ -84,9 +84,10 @@ impl Object {
         self.components.push(component);
     }
 
-    pub(crate) fn remove_component(&mut self, component_id: ComponentId) {
-        if let Some(index) = self.components.iter().position(|c| c.id() == component_id) {
-            self.components.swap_remove(index);
-        }
+    pub(crate) fn remove_component(&mut self, component_id: ComponentId) -> Option<AnyComponent> {
+        self.components
+            .iter()
+            .position(|c| c.id() == component_id)
+            .map(|index| self.components.swap_remove(index))
     }
 }

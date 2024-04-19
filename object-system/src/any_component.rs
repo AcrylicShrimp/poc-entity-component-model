@@ -21,6 +21,14 @@ impl AnyComponent {
         self.id
     }
 
+    pub fn name(&self) -> &'static str {
+        self.inner.name()
+    }
+
+    pub fn type_id(&self) -> TypeId {
+        self.inner.as_any().type_id()
+    }
+
     pub fn is_type_of<T>(&self) -> bool
     where
         T: Component,

@@ -1,5 +1,5 @@
 use object_system::{Component, ComponentId, Context, ContextProxy, Controller, ObjectId};
-use std::any::Any;
+use std::any::{type_name, Any};
 
 fn main() {
     let mut context = Context::new();
@@ -28,8 +28,60 @@ fn main() {
         ctx.attach_controller(object_id, controller);
     });
 
-    for _ in 0.. {
+    let empty_object_id = context.with_proxy(|ctx| {
+        // create an empty object to test if the `ctx.find_object_ids_by_component_type` correctly ignores objects that does not satisfy the condition
+        let object_id = ctx.create_object();
+        object_id
+    });
+
+    let (dummy_object_id, dummy_component_id) = context.with_proxy(|ctx| {
+        // create an object with a dummy component to test if the `ctx.find_object_ids_by_component_type` correctly returns the object id
+        let object_id = ctx.create_object();
+        let component_id = ctx.add_component(object_id, DummyComponent).unwrap();
+        (object_id, component_id)
+    });
+
+    context.with_proxy(|ctx| {
+        print_all_object_with_component::<MyComponent>(ctx);
+    });
+
+    // performs various tests on the `ctx.find_object_ids_by_component_type` method
+    context.with_proxy(|ctx| {
+        print_all_object_with_component::<DummyComponent>(ctx);
+    });
+    context.with_proxy(|ctx| {
+        ctx.add_component(empty_object_id, DummyComponent).unwrap();
+        ctx.remove_component(dummy_object_id, dummy_component_id);
+
+        print_all_object_with_component::<DummyComponent>(ctx);
+    });
+    context.with_proxy(|ctx| {
+        ctx.remove_object(empty_object_id);
+        ctx.remove_object(dummy_object_id);
+    });
+    context.with_proxy(|ctx| {
+        print_all_object_with_component::<DummyComponent>(ctx);
+    });
+
+    for _ in 0..10 {
         context.proceed_one_frame();
+    }
+}
+
+fn print_all_object_with_component<T>(ctx: &mut ContextProxy)
+where
+    T: Component,
+{
+    let object_ids = ctx.find_object_ids_by_component_type::<T>();
+
+    println!("[objects have component {}]", type_name::<T>());
+
+    if let Some(object_ids) = object_ids {
+        for &object_id in object_ids {
+            if let Some(object) = ctx.find_object_by_id(object_id) {
+                println!("- {:?}", object.id());
+            }
+        }
     }
 }
 
@@ -142,5 +194,17 @@ impl Controller for MyController {
             }
             _ => {}
         }
+    }
+}
+
+struct DummyComponent;
+
+impl Component for DummyComponent {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
     }
 }

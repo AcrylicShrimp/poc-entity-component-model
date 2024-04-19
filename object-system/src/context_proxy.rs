@@ -1,5 +1,9 @@
 use crate::{AnyComponent, Component, ComponentId, Controller, Object, ObjectId, ObjectStorage};
-use std::{any::Any, num::NonZeroU32};
+use std::{
+    any::{Any, TypeId},
+    collections::HashSet,
+    num::NonZeroU32,
+};
 
 pub(crate) enum ContextActionItem {
     RemoveObject {
@@ -84,6 +88,13 @@ impl<'ctx> ContextProxy<'ctx> {
         self.object_storage.get_mut(id)
     }
 
+    pub fn find_object_ids_by_component_type<T>(&self) -> Option<&HashSet<ObjectId>>
+    where
+        T: Component,
+    {
+        self.object_storage.object_ids_with_component::<T>()
+    }
+
     pub fn create_object(&mut self) -> ObjectId {
         let object_id = ObjectId::new(self.next_object_id);
         self.next_object_id = self.next_object_id.saturating_add(1);
@@ -113,21 +124,31 @@ impl<'ctx> ContextProxy<'ctx> {
     where
         T: Component,
     {
-        self.object_storage.get_mut(object_id).map(|object| {
-            let component_id = ComponentId::new(self.next_component_id);
-            self.next_component_id = self.next_component_id.saturating_add(1);
+        match self.object_storage.get_mut(object_id) {
+            Some(object) => {
+                let component_id = ComponentId::new(self.next_component_id);
+                self.next_component_id = self.next_component_id.saturating_add(1);
 
-            let component = AnyComponent::new(component_id, component);
-            object.add_component(component);
+                let component = AnyComponent::new(component_id, component);
+                object.add_component(component);
 
-            component_id
-        })
+                self.object_storage
+                    .register_component(object_id, TypeId::of::<T>());
+
+                Some(component_id)
+            }
+            None => None,
+        }
     }
 
     pub fn remove_component(&mut self, object_id: ObjectId, component_id: ComponentId) {
         if let Some(object) = self.object_storage.get_mut(object_id) {
-            object.remove_component(component_id);
-            // TODO: de-allocate the component id
+            if let Some(component) = object.remove_component(component_id) {
+                self.object_storage
+                    .unregister_component(object_id, component.type_id());
+
+                // TODO: de-allocate the component id
+            }
         }
     }
 
